@@ -22,7 +22,7 @@ class Neuron:
 
         result = self.bias
         for i in range(len(self.weights)):
-            result += self.weights[i] * inputs[i]
+            result += self.weights[i] * float(inputs[i])
 
         return result
 
@@ -45,8 +45,8 @@ class Neuron:
             self.weights[i] += self.alpha * delta * inputs[i]
 
         self.bias += self.alpha * delta
-        
-        return delta
+
+        return delta * self.weights
 
 
 if __name__ == '__main__':
