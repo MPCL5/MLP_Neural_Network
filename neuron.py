@@ -1,23 +1,24 @@
 import numpy as np
 from active_func import ActiveFunc
 from active_functions.sigmoid import Sigmoid
+from typing import List
 
 
 class Neuron:
     alpha = .0
     bias = np.random.random() * .25
-    weights = []
+    weights: List[float] = []
 
     def __init__(self, len_inputs, alpha, active_func) -> None:
         if not isinstance(active_func, ActiveFunc):
             raise Exception('Wrong active function')
 
-        self.weights = [np.random.random() * .5 for _ in range(len_inputs)]
+        self.weights = [np.random.random() * 2 - 1 for _ in range(len_inputs)]
         self.alpha = alpha
         self.active_func: ActiveFunc = active_func
 
     def __calculate_vanilla(self, inputs) -> float:
-        if (len(inputs) != len(self.weights)):
+        if len(inputs) != len(self.weights):
             raise Exception("inputs length is not matching weights length")
 
         result = self.bias
@@ -26,12 +27,13 @@ class Neuron:
 
         return result
 
-    def __calculate_delta(self, inputs, error) -> None:
-        deriviative_y = self.active_func.calculate_derivative(
-            self.__calculate_vanilla(inputs)
-        )
+    def __calculate_delta(self, inputs, error) -> float:
+        y_ni = self.__calculate_vanilla(inputs)
+        derivative_y = self.active_func.calculate_derivative(y_ni)
+        if np.abs(derivative_y) == np.inf:
+            print('fucked')
 
-        return error * deriviative_y
+        return error * derivative_y
 
     def forward(self, inputs) -> float:
         y = self.__calculate_vanilla(inputs)
@@ -41,12 +43,23 @@ class Neuron:
     def backward(self, inputs, error) -> float:
         delta = self.__calculate_delta(inputs, error)
 
+        result = np.multiply(delta, self.weights)
+
         for i in range(len(inputs)):
             self.weights[i] += self.alpha * delta * inputs[i]
 
+        # print(self.weights)
         self.bias += self.alpha * delta
+        # if np.abs(self.bias) == np.inf:
+        #     print('fucked')
 
-        return delta * self.weights
+        # for item in list(result):
+            # print(item)
+            # if np.isnan(item):
+            #     print(list(result))
+            #     print(f'item: {str(item)}')
+
+        return result
 
 
 if __name__ == '__main__':
