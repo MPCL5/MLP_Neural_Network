@@ -37,27 +37,16 @@ class Neuron:
 
     def forward(self, inputs) -> float:
         y = self.__calculate_vanilla(inputs)
-
         return self.active_func.calculate(y)
 
     def backward(self, inputs, error) -> float:
         delta = self.__calculate_delta(inputs, error)
-
         result = np.multiply(delta, self.weights)
 
         for i in range(len(inputs)):
             self.weights[i] += self.alpha * delta * inputs[i]
 
-        # print(self.weights)
         self.bias += self.alpha * delta
-        # if np.abs(self.bias) == np.inf:
-        #     print('fucked')
-
-        # for item in list(result):
-            # print(item)
-            # if np.isnan(item):
-            #     print(list(result))
-            #     print(f'item: {str(item)}')
 
         return result
 

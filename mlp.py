@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from active_functions.ReLU import ReLU
 from neuron import Neuron
-from active_functions.sigmoid import Sigmoid
+# from active_functions.sigmoid import Sigmoid
 from typing import List
 import numpy as np
 import pandas as pd
@@ -31,19 +31,23 @@ class MLP:
             neuron = Neuron(len(self.hidden_layer), self.alpha, ReLU())
             self.class_layer.append(neuron)
 
-    def __predict_one(self, input) -> List[float]:
+    def __predict_one(self, input_vector) -> np.ndarray:
         results = []
-        for neuron in self.hidden_layer:
-            results.append(neuron.forward(input))
+        # forward in the hidden layer.
+        for i in range(len(self.hidden_layer)):
+            results.append(self.hidden_layer[i].forward(input_vector))
 
-        predicted = []
+        predicted = np.zeros(len(self.class_layer))
         for i in range(len(self.class_layer)):
-            # forward in last layer
-            predicted.append(self.class_layer[i].forward(results))
+            # forward in the class layer
+            predicted[i] = self.class_layer[i].forward(results)
 
         return predicted
 
     def fit(self, x_train: pd.DataFrame, y_train: pd.Series):
+        x_train = x_train.reset_index(drop=True)
+        y_train = y_train.reset_index(drop=True)
+
         input_count = x_train.shape[1]  # get input count
         unique_values_count = len(y_train.unique())
 
@@ -72,18 +76,14 @@ class MLP:
                 for i in range(len(self.hidden_layer)):
                     self.hidden_layer[i].backward(row, deltas[i])
 
-    def predict(self, input_vector):
-        results = []
-        # forward in the hidden layer.
-        for i in range(len(self.hidden_layer)):
-            results.append(self.hidden_layer[i].forward(input_vector))
+    def predict(self, input_df: pd.DataFrame) -> np.ndarray:
+        input_df = input_df.reset_index(drop=True)
+        result = np.zeros(input_df.shape[0], np.float)
+        for ix, row in input_df.iterrows():
+            results = self.__predict_one(row)
+            result[ix] = np.argmax(results) + 1
 
-        predicted = np.zeros(len(self.class_layer))
-        for i in range(len(self.class_layer)):
-            # forward in the class layer
-            predicted[i] = self.class_layer[i].forward(results)
-
-        return predicted
+        return result
 
     def save_weights(self, save_path: str) -> None:
         result = {
