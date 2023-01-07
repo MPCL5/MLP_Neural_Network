@@ -6,6 +6,7 @@ from active_functions.sigmoid import Sigmoid
 from typing import List
 import numpy as np
 import pandas as pd
+import json
 
 
 class MLP:
@@ -84,9 +85,55 @@ class MLP:
 
         return predicted
 
-    def save_weights(self, save_path) -> None:
-        pass
+    def save_weights(self, save_path: str) -> None:
+        result = {
+            "max_epochs": self.epochs,
+            "alpha": self.alpha,
+            "hidden": [],
+            "class": []
+        }
+
+        for hidden in self.hidden_layer:
+            weights = hidden.weights.copy()
+            weights.append(hidden.bias)
+            result["hidden"].append(weights)
+
+        for class_neuron in self.class_layer:
+            weights = class_neuron.weights.copy()
+            weights.append(class_neuron.bias)
+            result["class"].append(weights)
+
+        # Writing file
+        with open(save_path, "w") as outfile:
+            json.dump(result, outfile)
 
     @classmethod
-    def load_weights(cls) -> MLP:
-        pass
+    def load_weights(cls, load_path: str) -> MLP:
+        json_object = {}
+
+        with open(load_path, 'r') as openfile:
+            # Reading from json file
+            json_object = json.load(openfile)
+
+        mlp = MLP(json_object["max_epochs"], 0, json_object["alpha"])
+
+        # Duplicated logic. I will fix this in further commits.
+        for item in json_object["hidden"]:
+            len_weights = len(item) - 1
+            neuron = Neuron(len_weights, mlp.alpha, ReLU())
+            neuron.bias = item[-1]
+            for i in range(len_weights):
+                neuron.weights[i] = item[i]
+
+            mlp.hidden_layer.append(neuron)
+
+        for item in json_object["class"]:
+            len_weights = len(item) - 1
+            neuron = Neuron(len_weights, mlp.alpha, ReLU())
+            neuron.bias = item[-1]
+            for i in range(len_weights):
+                neuron.weights[i] = item[i]
+
+            mlp.class_layer.append(neuron)
+
+        return mlp
